@@ -20,15 +20,15 @@ jobs:
         
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
-      
-    - name: Make gradlew executable
-      run: chmod +x ./android/gradlew
-      
-    - name: Build Debug APK
-      uses: gradle/gradle-build-action@v2
+
+    - name: Set up Gradle
+      uses: gradle/actions/setup-gradle@v4
       with:
-        arguments: assembleDebug --stacktrace
-        build-root-directory: ./android
+        gradle-version: '8.5'
+
+    - name: Build Debug APK
+      working-directory: ./android
+      run: gradle assembleDebug --stacktrace
         
     - name: Show build logs
       if: failure()
