@@ -21,22 +21,16 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
       
-    - name: Grant execute permission for gradlew
-      working-directory: ./android
-      run: chmod +x gradlew
+    - name: Make gradlew executable
+      run: chmod +x ./android/gradlew
       
-    - name: Build with Gradle
-      working-directory: ./android
-      run: |
-        cat gradle/wrapper/gradle-wrapper.properties
-        ./gradlew --version
-        ./gradlew assembleDebug --info || true
-        ls -la app/build/outputs/apk/debug/ 2>/dev/null || echo "APK not found"
-      
-    - name: Check APK exists
-      run: ls -la android/app/build/outputs/apk/debug/
+    - name: Build Debug APK
+      uses: gradle/gradle-build-action@v2
+      with:
+        arguments: assembleDebug
+        build-root-directory: ./android
         
-    - name: Upload APK to Artifacts
+    - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: openclaw-gateway-apk
@@ -49,7 +43,5 @@ jobs:
         files: android/app/build/outputs/apk/debug/app-debug.apk
         tag_name: v${{ github.run_number }}
         name: Release v${{ github.run_number }}
-        draft: false
-        prerelease: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
