@@ -27,8 +27,14 @@ jobs:
     - name: Build Debug APK
       uses: gradle/gradle-build-action@v2
       with:
-        arguments: assembleDebug
+        arguments: assembleDebug --stacktrace
         build-root-directory: ./android
+        
+    - name: Show build logs
+      if: failure()
+      run: |
+        cat ./android/app/build/outputs/logs/*.log 2>/dev/null || true
+        find ./android -name "*.log" -exec cat {} \; 2>/dev/null | head -100 || true
         
     - name: Upload APK
       uses: actions/upload-artifact@v4
