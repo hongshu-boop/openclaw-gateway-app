@@ -13,8 +13,8 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ImageButton;
-import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -81,27 +81,11 @@ public class MainActivity extends AppCompatActivity {
                 ContextCompat.getColor(this, R.color.brand_primary),
                 ContextCompat.getColor(this, R.color.brand_accent)
         );
-        swipeRefreshLayout.setOnRefreshListener(() -> {
-            if (hasSavedUrl()) {
-                webView.reload();
-            } else {
-                swipeRefreshLayout.setRefreshing(false);
-                showConfigDialog();
-            }
-        });
+        swipeRefreshLayout.setEnabled(false);
+        swipeRefreshLayout.setOnRefreshListener(() -> swipeRefreshLayout.setRefreshing(false));
 
-        ImageButton refreshButton = findViewById(R.id.refreshButton);
-        ImageButton sessionRefreshButton = findViewById(R.id.sessionRefreshButton);
-        ImageButton settingsButton = findViewById(R.id.settingsButton);
-        refreshButton.setOnClickListener(view -> {
-            if (hasSavedUrl()) {
-                loadGateway(getSavedUrl());
-            } else {
-                showConfigDialog();
-            }
-        });
-        sessionRefreshButton.setOnClickListener(view -> triggerSessionRefresh());
-        settingsButton.setOnClickListener(view -> showConfigDialog());
+        ImageButton actionButton = findViewById(R.id.actionButton);
+        actionButton.setOnClickListener(view -> showQuickActions());
 
         MaterialButton retryButton = findViewById(R.id.retryButton);
         MaterialButton configureButton = findViewById(R.id.configureButton);
@@ -130,9 +114,6 @@ public class MainActivity extends AppCompatActivity {
         webView.setOverScrollMode(View.OVER_SCROLL_NEVER);
         webView.setWebChromeClient(new WebChromeClient());
         webView.setWebViewClient(new GatewayWebViewClient());
-        webView.setOnScrollChangeListener((view, scrollX, scrollY, oldScrollX, oldScrollY) ->
-                swipeRefreshLayout.setEnabled(scrollY == 0)
-        );
     }
 
     private void loadGateway(String rawUrl) {
@@ -185,6 +166,23 @@ public class MainActivity extends AppCompatActivity {
             showToast(getString(R.string.config_saved));
         }));
         dialog.show();
+    }
+
+    private void showQuickActions() {
+        String[] actions = new String[] {
+                getString(R.string.action_session_refresh),
+                getString(R.string.action_settings)
+        };
+
+        new MaterialAlertDialogBuilder(this)
+                .setItems(actions, (dialog, which) -> {
+                    if (which == 0) {
+                        triggerSessionRefresh();
+                    } else if (which == 1) {
+                        showConfigDialog();
+                    }
+                })
+                .show();
     }
 
     private void clearConfiguration() {
@@ -325,8 +323,9 @@ public class MainActivity extends AppCompatActivity {
         webView.evaluateJavascript(script, value -> {
             boolean clicked = value != null && value.contains("true");
             if (!clicked) {
-                webView.reload();
-                showToast("Session refresh button was not found, page reloaded.");
+                showToast(getString(R.string.session_refresh_not_found));
+            } else {
+                showToast(getString(R.string.session_refresh_success));
             }
         });
     }

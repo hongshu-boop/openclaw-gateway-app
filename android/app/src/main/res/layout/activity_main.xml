@@ -28,48 +28,19 @@
         app:indicatorColor="@color/brand_primary"
         app:trackColor="@color/progress_track" />
 
-    <LinearLayout
-        android:id="@+id/floatingControls"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="top|end"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="16dp"
-        android:gravity="center"
-        android:orientation="horizontal">
-
-        <ImageButton
-            android:id="@+id/refreshButton"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="@drawable/bg_floating_control"
-            android:contentDescription="@string/action_refresh"
-            android:padding="12dp"
-            android:src="@drawable/ic_menu_refresh"
-            android:tint="@color/ink_primary" />
-
-        <ImageButton
-            android:id="@+id/sessionRefreshButton"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_marginStart="10dp"
-            android:background="@drawable/bg_floating_control"
-            android:contentDescription="@string/action_session_refresh"
-            android:padding="12dp"
-            android:src="@drawable/ic_menu_session"
-            android:tint="@color/ink_primary" />
-
-        <ImageButton
-            android:id="@+id/settingsButton"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_marginStart="10dp"
-            android:background="@drawable/bg_floating_control"
-            android:contentDescription="@string/action_settings"
-            android:padding="12dp"
-            android:src="@drawable/ic_menu_settings"
-            android:tint="@color/ink_primary" />
-    </LinearLayout>
+    <ImageButton
+        android:id="@+id/actionButton"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="18dp"
+        android:layout_marginBottom="108dp"
+        android:background="@drawable/bg_floating_control"
+        android:contentDescription="@string/action_more"
+        android:elevation="8dp"
+        android:padding="12dp"
+        android:src="@drawable/ic_menu_session"
+        android:tint="@color/ink_primary" />
 
     <LinearLayout
         android:id="@+id/emptyState"
