@@ -21,7 +21,7 @@
     <string name="action_retry">Retry</string>
     <string name="action_configure">Configure</string>
     <string name="session_refresh_success">Session refresh triggered</string>
-    <string name="session_refresh_not_found">Could not find the page's session refresh action</string>
+    <string name="session_refresh_not_found">Could not find a session refresh action on this page</string>
     <string name="invalid_url_error">Enter a valid gateway URL, for example http://192.168.1.100:8080</string>
     <string name="config_saved">Gateway settings saved</string>
     <string name="config_cleared">Saved gateway settings cleared</string>
