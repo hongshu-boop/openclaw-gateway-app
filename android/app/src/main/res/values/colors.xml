@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="brand_primary">#1D6759</color>
+    <color name="brand_primary_container">#D8EFE9</color>
+    <color name="brand_primary_dark">#0F3A33</color>
+    <color name="brand_on_primary">#F6FCFA</color>
+    <color name="brand_accent">#E38B2C</color>
+    <color name="brand_on_accent">#2F1600</color>
+    <color name="background_base">#F5F1EA</color>
+    <color name="panel_surface">#FFFDF8</color>
+    <color name="panel_stroke">#E2D8C7</color>
+    <color name="web_surface">#FFFDFC</color>
+    <color name="progress_track">#D9E6E1</color>
+    <color name="ink_primary">#1F2522</color>
+    <color name="ink_secondary">#58615C</color>
+    <color name="ink_tertiary">#7A817D</color>
+    <color name="status_success_bg">#D7F0E4</color>
+    <color name="status_success_text">#17593D</color>
+    <color name="status_warning_bg">#FDE7C8</color>
+    <color name="status_warning_text">#8B5310</color>
+    <color name="status_error_bg">#F9DBD7</color>
+    <color name="status_error_text">#8C2E23</color>
+    <color name="status_neutral_bg">#E9E4DA</color>
+    <color name="status_neutral_text">#6B6257</color>
+    <color name="token_ready_bg">#D8E9FF</color>
+    <color name="token_ready_text">#285591</color>
+    <color name="token_empty_bg">#EEE5DF</color>
+    <color name="token_empty_text">#7A6456</color>
+    <color name="splash_background">#F3EEE5</color>
+</resources>

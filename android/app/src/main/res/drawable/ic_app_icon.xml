@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="24dp" />
+            <gradient
+                android:angle="315"
+                android:endColor="@color/brand_primary_dark"
+                android:startColor="@color/brand_primary" />
+        </shape>
+    </item>
+
+    <item
+        android:drawable="@drawable/ic_app_mark"
+        android:gravity="center"
+        android:height="72dp"
+        android:width="72dp" />
+</layer-list>

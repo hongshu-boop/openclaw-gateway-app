@@ -11,16 +11,16 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Set up JDK 17
       uses: actions/setup-java@v4
       with:
         java-version: '17'
         distribution: 'temurin'
-        
+
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
 
@@ -32,25 +32,28 @@ jobs:
     - name: Build Debug APK
       working-directory: ./android
       run: gradle assembleDebug --stacktrace
-        
+
     - name: Show build logs
       if: failure()
       run: |
         cat ./android/app/build/outputs/logs/*.log 2>/dev/null || true
         find ./android -name "*.log" -exec cat {} \; 2>/dev/null | head -100 || true
-        
+
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: openclaw-gateway-apk
-        path: android/app/build/outputs/apk/debug/app-debug.apk
-        
+        name: openclaw-gateway-debug-${{ github.run_number }}
+        path: android/app/build/outputs/apk/debug/*.apk
+
     - name: Create Release
       if: github.ref == 'refs/heads/main'
       uses: softprops/action-gh-release@v1
       with:
-        files: android/app/build/outputs/apk/debug/app-debug.apk
+        files: android/app/build/outputs/apk/debug/*.apk
         tag_name: v${{ github.run_number }}
-        name: Release v${{ github.run_number }}
+        name: OpenClaw Gateway Preview v${{ github.run_number }}
+        body: |
+          Automated Android preview build.
+          Run: ${{ github.run_number }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
