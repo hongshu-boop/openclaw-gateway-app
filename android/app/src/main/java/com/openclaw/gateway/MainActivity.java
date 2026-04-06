@@ -4,10 +4,7 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
-import android.text.TextUtils;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
@@ -15,6 +12,7 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -24,7 +22,6 @@ import androidx.core.content.ContextCompat;
 import androidx.core.splashscreen.SplashScreen;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
-import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
@@ -47,10 +44,6 @@ public class MainActivity extends AppCompatActivity {
     private SwipeRefreshLayout swipeRefreshLayout;
     private LinearProgressIndicator loadingIndicator;
     private View emptyState;
-    private TextView connectionTitle;
-    private TextView connectionDetail;
-    private TextView connectionBadge;
-    private TextView tokenBadge;
     private TextView emptyTitle;
     private TextView emptyDescription;
 
@@ -79,18 +72,11 @@ public class MainActivity extends AppCompatActivity {
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
         loadingIndicator = findViewById(R.id.loadingIndicator);
         emptyState = findViewById(R.id.emptyState);
-        connectionTitle = findViewById(R.id.connectionTitle);
-        connectionDetail = findViewById(R.id.connectionDetail);
-        connectionBadge = findViewById(R.id.connectionBadge);
-        tokenBadge = findViewById(R.id.tokenBadge);
         emptyTitle = findViewById(R.id.emptyTitle);
         emptyDescription = findViewById(R.id.emptyDescription);
     }
 
     private void configureUi() {
-        MaterialToolbar toolbar = findViewById(R.id.topAppBar);
-        setSupportActionBar(toolbar);
-
         swipeRefreshLayout.setColorSchemeColors(
                 ContextCompat.getColor(this, R.color.brand_primary),
                 ContextCompat.getColor(this, R.color.brand_accent)
@@ -103,6 +89,17 @@ public class MainActivity extends AppCompatActivity {
                 showConfigDialog();
             }
         });
+
+        ImageButton refreshButton = findViewById(R.id.refreshButton);
+        ImageButton settingsButton = findViewById(R.id.settingsButton);
+        refreshButton.setOnClickListener(view -> {
+            if (hasSavedUrl()) {
+                loadGateway(getSavedUrl());
+            } else {
+                showConfigDialog();
+            }
+        });
+        settingsButton.setOnClickListener(view -> showConfigDialog());
 
         MaterialButton retryButton = findViewById(R.id.retryButton);
         MaterialButton configureButton = findViewById(R.id.configureButton);
@@ -124,10 +121,16 @@ public class MainActivity extends AppCompatActivity {
         settings.setSupportZoom(false);
         settings.setBuiltInZoomControls(false);
         settings.setDisplayZoomControls(false);
-        settings.setUserAgentString(settings.getUserAgentString() + " OpenClawGateway/1.1");
+        settings.setLoadWithOverviewMode(true);
+        settings.setUseWideViewPort(true);
+        settings.setUserAgentString(settings.getUserAgentString() + " OpenClawGateway/1.2");
 
+        webView.setOverScrollMode(View.OVER_SCROLL_NEVER);
         webView.setWebChromeClient(new WebChromeClient());
         webView.setWebViewClient(new GatewayWebViewClient());
+        webView.setOnScrollChangeListener((view, scrollX, scrollY, oldScrollX, oldScrollY) ->
+                swipeRefreshLayout.setEnabled(scrollY == 0)
+        );
     }
 
     private void loadGateway(String rawUrl) {
@@ -138,14 +141,13 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        setLoadingState(normalizedUrl);
+        showLoadingState();
         webView.loadUrl(normalizedUrl);
     }
 
     private void showConfigDialog() {
         View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_gateway_config, null);
         TextInputLayout urlLayout = dialogView.findViewById(R.id.urlInputLayout);
-        TextInputLayout tokenLayout = dialogView.findViewById(R.id.tokenInputLayout);
         TextInputEditText urlInput = dialogView.findViewById(R.id.urlInput);
         TextInputEditText tokenInput = dialogView.findViewById(R.id.tokenInput);
 
@@ -162,7 +164,6 @@ public class MainActivity extends AppCompatActivity {
 
         dialog.setOnShowListener(ignored -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view -> {
             urlLayout.setError(null);
-            tokenLayout.setError(null);
 
             String normalizedUrl = normalizeUrl(valueOf(urlInput));
             String token = valueOf(tokenInput);
@@ -172,20 +173,16 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
 
-            saveConfiguration(normalizedUrl, token);
+            prefs.edit()
+                    .putString(KEY_URL, normalizedUrl)
+                    .putString(KEY_TOKEN, token)
+                    .apply();
+
             dialog.dismiss();
             loadGateway(normalizedUrl);
             showToast(getString(R.string.config_saved));
         }));
         dialog.show();
-    }
-
-    private void saveConfiguration(String url, String token) {
-        prefs.edit()
-                .putString(KEY_URL, url)
-                .putString(KEY_TOKEN, token)
-                .apply();
-        updateGatewaySummary(buildGatewayLabel(url), getString(R.string.status_ready_detail), !token.isEmpty(), false);
     }
 
     private void clearConfiguration() {
@@ -198,20 +195,18 @@ public class MainActivity extends AppCompatActivity {
         showToast(getString(R.string.config_cleared));
     }
 
-    private void setLoadingState(String url) {
+    private void showLoadingState() {
         webView.setVisibility(View.VISIBLE);
         emptyState.setVisibility(View.GONE);
         loadingIndicator.setVisibility(View.VISIBLE);
         swipeRefreshLayout.setRefreshing(true);
-        updateGatewaySummary(buildGatewayLabel(url), getString(R.string.status_loading_detail), hasToken(), false);
     }
 
-    private void setReadyState(String url) {
+    private void showReadyState() {
         webView.setVisibility(View.VISIBLE);
         emptyState.setVisibility(View.GONE);
         loadingIndicator.setVisibility(View.GONE);
         swipeRefreshLayout.setRefreshing(false);
-        updateGatewaySummary(buildGatewayLabel(url), getString(R.string.status_ready_detail), hasToken(), true);
     }
 
     private void showUnconfiguredState() {
@@ -221,55 +216,76 @@ public class MainActivity extends AppCompatActivity {
         swipeRefreshLayout.setRefreshing(false);
         emptyTitle.setText(R.string.empty_title);
         emptyDescription.setText(R.string.empty_description);
-        updateGatewaySummary(
-                getString(R.string.status_unconfigured_title),
-                getString(R.string.status_unconfigured_detail),
-                hasToken(),
-                false
-        );
     }
 
-    private void showErrorState(String url, String message) {
+    private void showErrorState(String message) {
         webView.setVisibility(View.INVISIBLE);
         emptyState.setVisibility(View.VISIBLE);
         loadingIndicator.setVisibility(View.GONE);
         swipeRefreshLayout.setRefreshing(false);
         emptyTitle.setText(R.string.error_title);
         emptyDescription.setText(getString(R.string.error_description, message));
-        updateGatewaySummary(buildGatewayLabel(url), message, hasToken(), false);
-        applyBadgeStyle(connectionBadge, getString(R.string.badge_failed), R.color.status_error_bg, R.color.status_error_text);
     }
 
-    private void updateGatewaySummary(String title, String detail, boolean hasToken, boolean connected) {
-        connectionTitle.setText(title);
-        connectionDetail.setText(detail);
-        applyBadgeStyle(
-                connectionBadge,
-                connected ? getString(R.string.badge_connected) : hasSavedUrl() ? getString(R.string.badge_connecting) : getString(R.string.badge_not_configured),
-                connected ? R.color.status_success_bg : hasSavedUrl() ? R.color.status_warning_bg : R.color.status_neutral_bg,
-                connected ? R.color.status_success_text : hasSavedUrl() ? R.color.status_warning_text : R.color.status_neutral_text
-        );
-        applyBadgeStyle(
-                tokenBadge,
-                hasToken ? getString(R.string.badge_token_ready) : getString(R.string.badge_token_empty),
-                hasToken ? R.color.token_ready_bg : R.color.token_empty_bg,
-                hasToken ? R.color.token_ready_text : R.color.token_empty_text
-        );
-    }
-
-    private void applyBadgeStyle(TextView badge, String text, int backgroundColorRes, int textColorRes) {
-        badge.setText(text);
-        badge.getBackground().mutate().setTint(ContextCompat.getColor(this, backgroundColorRes));
-        badge.setTextColor(ContextCompat.getColor(this, textColorRes));
-    }
-
-    private void injectToken(WebView view) {
+    private void injectPageEnhancements(WebView view) {
         String token = getSavedToken();
-        if (token.isEmpty()) {
-            return;
-        }
+        String tokenScript = token.isEmpty()
+                ? ""
+                : "window.localStorage.setItem('openclaw_token', " + JSONObject.quote(token) + ");";
 
-        String script = "window.localStorage.setItem('openclaw_token', " + JSONObject.quote(token) + ");";
+        String script = "(function(){"
+                + tokenScript
+                + "var stickyId='openclaw-sticky-search';"
+                + "var styleId='openclaw-sticky-style';"
+                + "function ensureStyle(){"
+                + " if(document.getElementById(styleId)) return;"
+                + " var style=document.createElement('style');"
+                + " style.id=styleId;"
+                + " style.textContent='.openclaw-sticky-search{position:sticky !important;top:0 !important;z-index:2147483646 !important;background:rgba(255,255,255,0.96) !important;backdrop-filter:blur(12px) !important;-webkit-backdrop-filter:blur(12px) !important;box-shadow:0 8px 24px rgba(0,0,0,0.08) !important;}.openclaw-sticky-search *{z-index:inherit !important;}';"
+                + " document.head.appendChild(style);"
+                + "}"
+                + "function isSearchNode(node){"
+                + " if(!node) return false;"
+                + " var text=((node.innerText||'')+' '+(node.getAttribute&&node.getAttribute('placeholder')||'')).toLowerCase();"
+                + " return text.indexOf('\\u641c\\u7d22')>=0 || text.indexOf('search')>=0;"
+                + "}"
+                + "function candidateFromInput(input){"
+                + " var el=input;"
+                + " for(var i=0;i<4 && el && el.parentElement;i++){"
+                + "   if(el.getBoundingClientRect().width > window.innerWidth*0.55){ return el; }"
+                + "   el=el.parentElement;"
+                + " }"
+                + " return input.parentElement || input;"
+                + "}"
+                + "function findSearchBar(){"
+                + " var inputs=[].slice.call(document.querySelectorAll('input,textarea,[role=\"searchbox\"],button,div,section,header'));"
+                + " for(var i=0;i<inputs.length;i++){"
+                + "   var node=inputs[i];"
+                + "   if(isSearchNode(node)){"
+                + "     if(node.tagName==='INPUT' || node.tagName==='TEXTAREA'){ return candidateFromInput(node); }"
+                + "     return node;"
+                + "   }"
+                + " }"
+                + " return null;"
+                + "}"
+                + "function pinSearchBar(){"
+                + " ensureStyle();"
+                + " var bar=findSearchBar();"
+                + " if(!bar) return false;"
+                + " var parent=bar.parentElement;"
+                + " while(parent && parent !== document.body){"
+                + "   if(parent.style){ parent.style.overflow='visible'; }"
+                + "   parent=parent.parentElement;"
+                + " }"
+                + " bar.classList.add(stickyId);"
+                + " return true;"
+                + "}"
+                + "pinSearchBar();"
+                + "setTimeout(pinSearchBar,400);"
+                + "setTimeout(pinSearchBar,1200);"
+                + "new MutationObserver(function(){ pinSearchBar(); }).observe(document.documentElement,{childList:true,subtree:true});"
+                + "})();";
+
         view.evaluateJavascript(script, null);
     }
 
@@ -300,27 +316,8 @@ public class MainActivity extends AppCompatActivity {
                 || normalized.matches("^(\\d{1,3}\\.){3}\\d{1,3}(:\\d+)?(/.*)?$");
     }
 
-    private String buildGatewayLabel(String url) {
-        if (TextUtils.isEmpty(url)) {
-            return getString(R.string.status_unconfigured_title);
-        }
-
-        Uri uri = Uri.parse(url);
-        String host = uri.getHost();
-        if (host == null || host.isEmpty()) {
-            return url;
-        }
-        String scheme = uri.getScheme() == null ? "" : uri.getScheme() + "://";
-        String port = uri.getPort() > 0 ? ":" + uri.getPort() : "";
-        return scheme + host + port;
-    }
-
     private boolean hasSavedUrl() {
         return !getSavedUrl().isEmpty();
-    }
-
-    private boolean hasToken() {
-        return !getSavedToken().isEmpty();
     }
 
     private String getSavedUrl() {
@@ -337,30 +334,6 @@ public class MainActivity extends AppCompatActivity {
 
     private void showToast(String message) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.main_menu, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        int itemId = item.getItemId();
-        if (itemId == R.id.action_refresh) {
-            if (hasSavedUrl()) {
-                loadGateway(getSavedUrl());
-            } else {
-                showConfigDialog();
-            }
-            return true;
-        }
-        if (itemId == R.id.action_settings) {
-            showConfigDialog();
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
     }
 
     @Override
@@ -381,25 +354,24 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onPageStarted(WebView view, String url, Bitmap favicon) {
             super.onPageStarted(view, url, favicon);
-            setLoadingState(url);
+            showLoadingState();
         }
 
         @Override
         public void onPageFinished(WebView view, String url) {
             super.onPageFinished(view, url);
-            injectToken(view);
-            setReadyState(url);
+            injectPageEnhancements(view);
+            showReadyState();
         }
 
         @Override
         public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
             super.onReceivedError(view, request, error);
             if (request.isForMainFrame()) {
-                String failingUrl = request.getUrl() == null ? getSavedUrl() : request.getUrl().toString();
                 String description = error == null || error.getDescription() == null
                         ? getString(R.string.error_unknown)
                         : error.getDescription().toString();
-                showErrorState(failingUrl, description);
+                showErrorState(description);
             }
         }
     }
