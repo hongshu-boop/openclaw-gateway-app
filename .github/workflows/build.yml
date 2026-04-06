@@ -21,26 +21,18 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
       
-    - name: Cache Gradle
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.gradle/caches
-          ~/.gradle/wrapper
-        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-        
-    - name: Setup Gradle
-      uses: gradle/gradle-build-action@v2
-      with:
-        gradle-version: 8.0
-        
-    - name: Build APK
+    - name: Grant execute permission for gradlew
       working-directory: ./android
-      run: |
-        gradle wrapper --gradle-version 8.0
-        ./gradlew assembleDebug --stacktrace
+      run: chmod +x gradlew
+      
+    - name: Build with Gradle
+      working-directory: ./android
+      run: ./gradlew assembleDebug --stacktrace
+      
+    - name: Check APK exists
+      run: ls -la android/app/build/outputs/apk/debug/
         
-    - name: Upload APK
+    - name: Upload APK to Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: openclaw-gateway-apk
