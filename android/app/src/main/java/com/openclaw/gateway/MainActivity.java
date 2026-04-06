@@ -91,6 +91,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         ImageButton refreshButton = findViewById(R.id.refreshButton);
+        ImageButton sessionRefreshButton = findViewById(R.id.sessionRefreshButton);
         ImageButton settingsButton = findViewById(R.id.settingsButton);
         refreshButton.setOnClickListener(view -> {
             if (hasSavedUrl()) {
@@ -99,6 +100,7 @@ public class MainActivity extends AppCompatActivity {
                 showConfigDialog();
             }
         });
+        sessionRefreshButton.setOnClickListener(view -> triggerSessionRefresh());
         settingsButton.setOnClickListener(view -> showConfigDialog());
 
         MaterialButton retryButton = findViewById(R.id.retryButton);
@@ -235,6 +237,35 @@ public class MainActivity extends AppCompatActivity {
 
         String script = "(function(){"
                 + tokenScript
+                + "window.__openclawRefreshSession=function(){"
+                + " function textOf(node){"
+                + "   return ((node.innerText||'')+' '+(node.getAttribute&&node.getAttribute('title')||'')+' '+(node.getAttribute&&node.getAttribute('aria-label')||'')+' '+(node.getAttribute&&node.getAttribute('data-tooltip')||'')).toLowerCase();"
+                + " }"
+                + " function visible(node){"
+                + "   if(!node) return false;"
+                + "   var rect=node.getBoundingClientRect();"
+                + "   var style=window.getComputedStyle(node);"
+                + "   return rect.width > 0 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden';"
+                + " }"
+                + " var nodes=[].slice.call(document.querySelectorAll('button,[role=\"button\"],a'));"
+                + " var best=null;"
+                + " var bestScore=-1;"
+                + " for(var i=0;i<nodes.length;i++){"
+                + "   var node=nodes[i];"
+                + "   if(!visible(node)) continue;"
+                + "   var text=textOf(node);"
+                + "   var score=0;"
+                + "   if(text.indexOf('refresh session')>=0 || text.indexOf('\\u5237\\u65b0\\u4f1a\\u8bdd')>=0) score+=8;"
+                + "   if(text.indexOf('refresh')>=0 || text.indexOf('\\u5237\\u65b0')>=0) score+=4;"
+                + "   if(text.indexOf('session')>=0 || text.indexOf('chat')>=0 || text.indexOf('\\u4f1a\\u8bdd')>=0 || text.indexOf('\\u804a\\u5929')>=0) score+=3;"
+                + "   var rect=node.getBoundingClientRect();"
+                + "   if(rect.top < 220) score+=2;"
+                + "   if(rect.left > window.innerWidth * 0.55) score+=2;"
+                + "   if(score > bestScore){ best=node; bestScore=score; }"
+                + " }"
+                + " if(best && bestScore >= 6){ best.click(); return true; }"
+                + " return false;"
+                + "};"
                 + "var stickyId='openclaw-sticky-search';"
                 + "var styleId='openclaw-sticky-style';"
                 + "function ensureStyle(){"
@@ -287,6 +318,17 @@ public class MainActivity extends AppCompatActivity {
                 + "})();";
 
         view.evaluateJavascript(script, null);
+    }
+
+    private void triggerSessionRefresh() {
+        String script = "(function(){ return !!(window.__openclawRefreshSession && window.__openclawRefreshSession()); })();";
+        webView.evaluateJavascript(script, value -> {
+            boolean clicked = value != null && value.contains("true");
+            if (!clicked) {
+                webView.reload();
+                showToast("Session refresh button was not found, page reloaded.");
+            }
+        });
     }
 
     private String normalizeUrl(String rawUrl) {

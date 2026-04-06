@@ -49,6 +49,17 @@
             android:tint="@color/ink_primary" />
 
         <ImageButton
+            android:id="@+id/sessionRefreshButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="10dp"
+            android:background="@drawable/bg_floating_control"
+            android:contentDescription="@string/action_session_refresh"
+            android:padding="12dp"
+            android:src="@drawable/ic_menu_session"
+            android:tint="@color/ink_primary" />
+
+        <ImageButton
             android:id="@+id/settingsButton"
             android:layout_width="48dp"
             android:layout_height="48dp"
