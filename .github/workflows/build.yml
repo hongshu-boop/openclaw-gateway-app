@@ -27,7 +27,11 @@ jobs:
       
     - name: Build with Gradle
       working-directory: ./android
-      run: ./gradlew assembleDebug --stacktrace
+      run: |
+        cat gradle/wrapper/gradle-wrapper.properties
+        ./gradlew --version
+        ./gradlew assembleDebug --info || true
+        ls -la app/build/outputs/apk/debug/ 2>/dev/null || echo "APK not found"
       
     - name: Check APK exists
       run: ls -la android/app/build/outputs/apk/debug/
